@@ -12,7 +12,7 @@ window.CONFIG = {
   // Data límit per fer propostes (hora local, format AAAA-MM-DDTHH:MM).
   // Fins aquest moment només es poden proposar jocs; després s’obren les votacions.
   // Deixa-ho buit ("") perquè propostes i votacions estiguin sempre obertes.
-  dataLimit: "2026-11-20T23:59",
+  dataLimit: "2026-11-08T23:59",
 
   // Vots que pot repartir cada persona
   votsPerPersona: 5,
