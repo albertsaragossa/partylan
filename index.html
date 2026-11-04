@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Partylan: a què juguem?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1d1b3a; --surf:#2a2750; --surf2:#35316a; --txt:#f2eefc; --mut:#b4aed8;
+  --acc:#ff5c8a; --vot:#5ce1e6; --ok:#7be495;
+  --disp:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.5 var(--body)}
+main{max-width:720px;margin:0 auto;padding:20px 16px 80px}
+h1,h2{font-family:var(--disp);margin:0;line-height:1.1}
+h1{font-size:clamp(2rem,8vw,3rem);font-weight:800}
+h2{font-size:1.3rem;font-weight:800;margin:32px 0 12px}
+button,input,textarea{font:inherit;color:inherit}
+input,textarea{width:100%;background:var(--surf);border:2px solid var(--surf2);border-radius:10px;padding:10px 12px}
+input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--vot);outline-offset:2px}
+textarea{resize:vertical;min-height:72px}
+button{cursor:pointer;border:0;border-radius:10px;padding:10px 16px;font-weight:700;background:var(--acc);color:#1d1b3a}
+button.sec{background:var(--surf2);color:var(--txt)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.hidden{display:none!important}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--mut);font-size:.9rem;margin-bottom:8px}
+.top b{color:var(--txt)}
+.gate{min-height:100vh;display:grid;place-items:center;padding:16px}
+.gate form,.panel{background:var(--surf);border-radius:16px;padding:20px;display:grid;gap:12px;width:100%;max-width:380px}
+.panel{max-width:none}
+label{display:grid;gap:6px;font-weight:600}
+.err{color:var(--acc);min-height:1.4em;margin:0}
+.note{background:var(--surf2);border-radius:10px;padding:8px 12px;font-size:.9rem;color:var(--mut)}
+.res{position:relative}
+.sug{position:absolute;left:0;right:0;top:100%;z-index:5;background:var(--surf2);border-radius:10px;margin-top:4px;max-height:240px;overflow:auto;box-shadow:0 8px 24px #0006}
+.sug button{display:block;width:100%;text-align:left;background:none;color:var(--txt);border-radius:0;font-weight:500}
+.sug button:hover,.sug button:focus-visible{background:var(--acc);color:#1d1b3a}
+.pick{display:flex;gap:12px;align-items:center}
+.pick img{width:120px;border-radius:8px;flex:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;padding:0;margin:0;list-style:none}
+.tile{position:relative;display:block;width:100%;padding:0;border:0;border-radius:12px;overflow:hidden;background:var(--surf);aspect-ratio:2/3;text-align:left;color:var(--txt);cursor:pointer}
+.tile img{width:100%;height:100%;object-fit:cover;display:block}
+.tile .nm{position:absolute;left:0;right:0;bottom:0;padding:28px 8px 8px;background:linear-gradient(transparent,#000c);font-weight:700;font-size:.85rem;line-height:1.2}
+.tile.top1{box-shadow:0 0 0 3px var(--ok)}
+.tile.mine{box-shadow:0 0 0 3px var(--vot)}
+.badge{position:absolute;top:8px;right:8px;background:var(--vot);color:#1d1b3a;border-radius:999px;min-width:30px;padding:2px 9px;font-weight:800;text-align:center}
+.modal{position:fixed;inset:0;background:#000b;display:grid;place-items:center;padding:16px;z-index:20}
+.dlg{background:var(--surf);border-radius:16px;max-width:460px;width:100%;max-height:90vh;overflow:auto}
+.dlg img{width:100%;display:block}
+.dlg .body{padding:16px;display:grid;gap:10px}
+.dlg h3{margin:0;font:800 1.3rem var(--disp)}
+.dlg a{color:var(--vot)}
+.by{color:var(--mut);font-size:.85rem}
+.msg{margin:0;white-space:pre-wrap}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.who{color:var(--mut);font-size:.8rem}
+.voted{background:var(--vot)}
+.del{background:none;color:var(--mut);text-decoration:underline;padding:6px}
+.empty{color:var(--mut);padding:24px;text-align:center;background:var(--surf);border-radius:16px}
+@media (max-width:480px){.head img,.pick img{width:84px}}
+</style>
+</head>
+<body>
+
+<section class="gate" id="gate">
+  <form id="gateForm">
+    <h1 id="gateTitle"></h1>
+    <label>El teu nom <input id="name" maxlength="24" autocomplete="nickname" required></label>
+    <p class="err" id="gateErr" role="alert"></p>
+    <button type="submit">Entrar</button>
+  </form>
+</section>
+
+<main id="app" class="hidden">
+  <div class="top">
+    <span>Hola, <b id="me"></b></span>
+    <span id="leftWrap"><b id="left"></b> vots per repartir</span>
+    <button class="sec" id="logout" type="button">Canviar de nom</button>
+  </div>
+  <h1 id="title"></h1>
+  <p id="modeNote" class="note hidden">Mode prova: les dades només es guarden en aquest navegador. Per compartir-les amb el grup, posa l’adreça de la base de dades a config.js.</p>
+
+  <p id="phase" class="note hidden"></p>
+
+  <h2 id="propH">Proposa un joc</h2>
+  <form class="panel" id="propForm">
+    <div class="res">
+      <label>Cerca un joc <input id="q" placeholder="Escriu el nom…" autocomplete="off"></label>
+      <div class="sug hidden" id="sug"></div>
+    </div>
+    <div id="chosen" class="pick hidden">
+      <img id="chosenImg" alt="">
+      <div><b id="chosenName"></b><br><button class="del" type="button" id="clear">Canviar de joc</button></div>
+    </div>
+    <details id="manual">
+      <summary>No hi surt? Afegeix-lo amb l’enllaç de Steam</summary>
+      <div style="display:grid;gap:8px;margin-top:8px">
+        <input id="url" placeholder="https://store.steampowered.com/app/550/…">
+        <input id="mname" placeholder="Nom del joc">
+        <button class="sec" type="button" id="useManual">Fer servir aquest joc</button>
+      </div>
+    </details>
+    <label>Per què hi hem de jugar? <textarea id="comment" maxlength="280" placeholder="Punts a favor, en poques línies"></textarea></label>
+    <p class="err" id="propErr" role="alert"></p>
+    <button type="submit">Proposar joc</button>
+  </form>
+
+  <h2>Jocs proposats</h2>
+  <ul class="grid" id="list"></ul>
+</main>
+
+<div class="modal hidden" id="modal"><div class="dlg" id="dlg" role="dialog" aria-modal="true"></div></div>
+
+<script src="config.js"></script>
+<script src="games.js"></script>
+<script>
+const C = window.CONFIG, GAMES = window.GAMES || [];
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const aid = x => String(x).replace(/\D/g,'');
+const img = id => `https://cdn.cloudflare.steamstatic.com/steam/apps/${aid(id)}/header.jpg`;
+const poster = id => `https://cdn.cloudflare.steamstatic.com/steam/apps/${aid(id)}/library_600x900.jpg`;
+const store = id => `https://store.steampowered.com/app/${aid(id)}/`;
+let user = null, state = {games:{}, votes:{}}, picked = null, timer = null, openId = null;
+
+/* ---------- Emmagatzematge: Firebase REST o mode prova (localStorage) ---------- */
+const remote = !!C.databaseUrl;
+const LS = 'partylan-demo';
+const store_ = {
+  async load(){
+    if(remote){
+      const r = await fetch(C.databaseUrl + '/.json'); if(!r.ok) throw 0;
+      const d = await r.json() || {}; return {games:d.games||{}, votes:d.votes||{}};
+    }
+    try{ return JSON.parse(localStorage.getItem(LS)) || {games:{}, votes:{}} }catch{ return {games:{}, votes:{}} }
+  },
+  async put(path, val){
+    if(remote){
+      const r = await fetch(`${C.databaseUrl}/${path}.json`, {method: val===null?'DELETE':'PUT', body: val===null?undefined:JSON.stringify(val)});
+      if(!r.ok) throw 0; return;
+    }
+    const d = await this.load(); const k = path.split('/'); let o = d;
+    for(let i=0;i<k.length-1;i++){ o[k[i]] = o[k[i]] || {}; o = o[k[i]]; }
+    if(val===null) delete o[k.at(-1)]; else o[k.at(-1)] = val;
+    try{ localStorage.setItem(LS, JSON.stringify(d)) }catch{}
+  }
+};
+
+/* ---------- Nom (sense contrasenya) ---------- */
+$('gateTitle').textContent = C.titol; $('title').textContent = C.titol; document.title = C.titol;
+$('gateForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('name').value.trim(); if(!name) return;
+  try{ localStorage.setItem('pl-user', name) }catch{}
+  enter(name);
+});
+function logout(){ try{ localStorage.removeItem('pl-user') }catch{}; location.reload(); }
+$('logout').onclick = logout;
+function enter(name){
+  user = name; $('me').textContent = name;
+  $('gate').classList.add('hidden'); $('app').classList.remove('hidden');
+  if(!remote) $('modeNote').classList.remove('hidden');
+  refresh(); timer = setInterval(refresh, (C.refrescSegons||5)*1000);
+}
+try{ const s = localStorage.getItem('pl-user'); if(s) enter(s); }catch{}
+
+/* ---------- Cercador de jocs ---------- */
+const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+$('q').addEventListener('input', () => {
+  const q = norm($('q').value.trim()), box = $('sug');
+  if(!q){ box.classList.add('hidden'); return; }
+  const hits = GAMES.filter(g => norm(g.name).includes(q)).slice(0,8);
+  box.innerHTML = hits.length ? hits.map(g => `<button type="button" data-id="${g.appid}">${esc(g.name)}</button>`).join('')
+    : '<div style="padding:10px 12px;color:var(--mut)">Cap resultat. Prova amb l’enllaç de Steam.</div>';
+  box.classList.remove('hidden');
+});
+$('sug').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  const g = GAMES.find(x => String(x.appid) === b.dataset.id); if(g) pick(g);
+});
+function pick(g){
+  picked = {appid:g.appid, name:g.name};
+  $('chosenName').textContent = g.name; $('chosenImg').src = img(g.appid);
+  $('chosen').classList.remove('hidden'); $('sug').classList.add('hidden'); $('q').value = '';
+  $('q').closest('.res').classList.add('hidden');
+}
+$('clear').onclick = () => { picked = null; $('chosen').classList.add('hidden'); $('q').closest('.res').classList.remove('hidden'); };
+$('useManual').onclick = () => {
+  const m = $('url').value.match(/\/app\/(\d+)/), n = $('mname').value.trim();
+  if(!m || !n){ $('propErr').textContent = 'Cal un enllaç de Steam amb /app/número i el nom del joc.'; return; }
+  $('propErr').textContent = ''; pick({appid:m[1], name:n});
+};
+
+/* ---------- Propostes i vots ---------- */
+$('propForm').addEventListener('submit', async e => {
+  e.preventDefault(); const err = $('propErr'); err.textContent = '';
+  const comment = $('comment').value.trim();
+  if(!canPropose()){ err.textContent = 'El termini de propostes ha acabat.'; return; }
+  if(!picked){ err.textContent = 'Tria un joc abans de proposar-lo.'; return; }
+  if(!comment){ err.textContent = 'Escriu un breu comentari amb els punts a favor.'; return; }
+  if(Object.values(state.games).some(g => String(g.appid) === String(picked.appid))){ err.textContent = 'Aquest joc ja està proposat. Pots votar-lo a la llista.'; return; }
+  const id = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+  try{
+    await store_.put('games/'+id, {appid:String(picked.appid), name:picked.name, comment, author:user, ts:Date.now()});
+    picked = null; $('comment').value = ''; $('clear').click(); await refresh();
+  }catch{ err.textContent = 'No s’ha pogut desar. Revisa la connexió i torna-ho a provar.'; }
+});
+const keyOf = n => encodeURIComponent(n.toLowerCase()).replace(/\./g,'%2E');
+const myVotes = () => Object.values(state.votes).filter(v => v && v[keyOf(user)]).length;
+
+async function toggle(id){
+  if(!canVote()){ alert('Les votacions encara no estan obertes.'); return; }
+  const k = keyOf(user), has = state.votes[id] && state.votes[id][k];
+  if(!has && myVotes() >= C.votsPerPersona){ alert('Has gastat tots els vots. Treu un vot d’un altre joc per canviar-lo.'); return; }
+  try{ await store_.put(`votes/${id}/${k}`, has ? null : user); await refresh(); }catch{ alert('No s’ha pogut registrar el vot.'); }
+}
+async function remove(id){
+  if(!confirm('Vols retirar aquesta proposta?')) return;
+  try{ await store_.put('games/'+id, null); await store_.put('votes/'+id, null); await refresh(); }catch{ alert('No s’ha pogut retirar.'); }
+}
+
+async function refresh(){
+  try{ state = await store_.load(); }catch{ return; }
+  render();
+}
+const canPropose = () => !C.dataLimit || Date.now() < new Date(C.dataLimit).getTime();
+const canVote = () => !C.dataLimit || Date.now() >= new Date(C.dataLimit).getTime();
+const when = () => new Date(C.dataLimit).toLocaleString('ca-ES', {dateStyle:'long', timeStyle:'short'});
+function remaining(){
+  const ms = new Date(C.dataLimit) - Date.now(), d = Math.floor(ms/864e5), h = Math.floor(ms%864e5/36e5), m = Math.floor(ms%36e5/6e4);
+  return d > 0 ? `${d} d i ${h} h` : `${h} h i ${m} min`;
+}
+function render(){
+  const cp = canPropose(), cv = canVote();
+  $('propH').classList.toggle('hidden', !cp); $('propForm').classList.toggle('hidden', !cp);
+  $('leftWrap').classList.toggle('hidden', !cv);
+  $('left').textContent = Math.max(0, C.votsPerPersona - myVotes());
+  const ph = $('phase'); ph.classList.toggle('hidden', !C.dataLimit);
+  if(C.dataLimit) ph.textContent = cp
+    ? `Propostes obertes fins al ${when()} (queden ${remaining()}). Després s’obriran les votacions.`
+    : 'Propostes tancades. Les votacions són obertes: reparteix els teus vots.';
+  const rs = Object.entries(state.games).map(([id,g]) => {
+    const v = state.votes[id] || {}; return {id, g, n:Object.keys(v).length, mine:!!v[keyOf(user)]};
+  }).sort((a,b) => b.n - a.n || a.g.ts - b.g.ts);
+  if(!rs.length){
+    $('list').innerHTML = `<li class="empty" style="grid-column:1/-1">${cp ? 'Encara no hi ha cap proposta. Sigues el primer a proposar un joc.' : 'No s’ha proposat cap joc.'}</li>`;
+  } else {
+    const max = rs[0].n;
+    $('list').innerHTML = rs.map(r => `<li><button class="tile ${cv && r.n===max && max>0 ? 'top1':''} ${r.mine ? 'mine':''}" data-open="${r.id}">
+      <img src="${poster(r.g.appid)}" data-id="${aid(r.g.appid)}" alt="" loading="lazy">
+      <span class="nm">${esc(r.g.name)}</span>${cv || r.n ? `<span class="badge">${r.n}</span>` : ''}</button></li>`).join('');
+  }
+  if(openId) showModal(openId);
+}
+function showModal(id){
+  const g = state.games[id]; if(!g){ closeModal(); return; }
+  openId = id;
+  const v = state.votes[id] || {}, names = Object.values(v), mine = !!v[keyOf(user)], cv = canVote(), cp = canPropose();
+  $('dlg').innerHTML = `<img src="${img(g.appid)}" alt="">
+    <div class="body">
+      <h3>${esc(g.name)}</h3>
+      <div class="by">Proposat per ${esc(g.author)} · <a href="${store(g.appid)}" target="_blank" rel="noopener">Veure a Steam</a></div>
+      <p class="msg">${esc(g.comment)}</p>
+      ${cv ? `<div class="who">${names.length} ${names.length===1 ? 'vot':'vots'}${names.length ? ': ' + names.map(esc).join(', ') : ''}</div>` : ''}
+      <div class="row">
+        ${cv ? `<button data-vote="${id}" class="${mine ? 'voted':''}">${mine ? 'Treure el vot' : 'Votar'}</button>` : `<span class="who">Les votacions s’obriran el ${esc(when())}.</span>`}
+        ${g.author===user && cp ? `<button class="del" data-del="${id}">Retirar proposta</button>` : ''}
+        <button class="sec" data-close>Tancar</button>
+      </div>
+    </div>`;
+  $('modal').classList.remove('hidden');
+}
+function closeModal(){ openId = null; $('modal').classList.add('hidden'); }
+$('list').addEventListener('click', e => { const o = e.target.closest('[data-open]'); if(o) showModal(o.dataset.open); });
+$('list').addEventListener('error', e => {
+  const i = e.target; if(i.tagName === 'IMG' && !i.dataset.fb){ i.dataset.fb = 1; i.src = img(i.dataset.id); }
+}, true);
+$('modal').addEventListener('click', e => {
+  const v = e.target.closest('[data-vote]'), d = e.target.closest('[data-del]');
+  if(v) toggle(v.dataset.vote);
+  else if(d) remove(d.dataset.del);
+  else if(e.target === $('modal') || e.target.closest('[data-close]')) closeModal();
+});
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>
