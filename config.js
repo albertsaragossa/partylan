@@ -7,7 +7,7 @@ window.CONFIG = {
   // Adreça de la teva Firebase Realtime Database (sense barra final).
   // Exemple: "https://el-teu-projecte-default-rtdb.europe-west1.firebasedatabase.app"
   // Mentre estigui buida, l’app funciona en mode prova (dades només en aquest navegador).
-  databaseUrl: "",
+  databaseUrl: "https://partylan-918a5-default-rtdb.europe-west1.firebasedatabase.app/",
 
   // Data límit per fer propostes (hora local, format AAAA-MM-DDTHH:MM).
   // Fins aquest moment només es poden proposar jocs; després s’obren les votacions.
