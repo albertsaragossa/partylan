@@ -6,7 +6,7 @@ Serveix per provar-la. Per al grup real, fes servir la versió amb contrasenya (
 
 ## Què fa
 
-- Cercador de jocs amb el llistat que tu defineixes (`games.js`).
+- Cercador que troba qualsevol joc de Steam, amb el catàleg actualitzat automàticament per GitHub. Els jocs preferits de `games.js` surten primer.
 - Opció d’afegir qualsevol altre joc enganxant-ne l’enllaç de Steam.
 - Els jocs es mostren com a miniatures (cartell de Steam). En tocar-ne una s’obre la fitxa amb el comentari, qui l’ha proposat i l’enllaç a Steam.
 - Data límit de propostes: fins a aquest moment només es poden proposar jocs; després s’obren les votacions.
@@ -19,7 +19,10 @@ Serveix per provar-la. Per al grup real, fes servir la versió amb contrasenya (
 | --- | --- |
 | `index.html` | L’aplicació |
 | `config.js` | Títol, base de dades, data límit de propostes i vots per persona |
-| `games.js` | Llistat de jocs que surten al cercador |
+| `games.js` | Jocs preferits, que surten primer al cercador |
+| `steam-games.json` | Catàleg de jocs de Steam (el genera sol GitHub) |
+| `scripts/actualitza-jocs.mjs` | Procés que descarrega el catàleg de Steam |
+| `.github/workflows/actualitzar-jocs.yml` | Fa que GitHub executi el procés cada setmana |
 
 ## Posar-ho en marxa
 
@@ -53,7 +56,18 @@ Amb `databaseUrl` buit a `config.js`, l’app guarda les dades només al teu nav
 
 A `config.js`, canvia `dataLimit` (hora local, format `AAAA-MM-DDTHH:MM`). Si el deixes buit (`""`), propostes i votacions estan sempre obertes, que va bé per provar. La data es comprova amb el rellotge del dispositiu de cada persona.
 
-### 5. Afegir els jocs més sol·licitats
+### 5. Cerca automàtica a tot el catàleg de Steam
+
+Steam no deixa consultar el seu catàleg directament des d’una pàgina web (el navegador ho bloqueja). Per això un procés de GitHub descarrega la llista de jocs i la desa a `steam-games.json`, i la pàgina hi cerca. S’actualitza sol cada dilluns.
+
+1. Demana una clau de l’API web de Steam a [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey). Al camp del domini pots posar-hi l’adreça de la teva pàgina de GitHub. Steam pot exigir que el compte hagi comprat alguna cosa per poder-ne generar una.
+2. Al repositori, entra a **Settings → Secrets and variables → Actions → New repository secret**. Posa-hi el nom `STEAM_API_KEY` i la clau com a valor. Així la clau no queda al codi.
+3. Ves a la pestanya **Actions**, tria **Actualitzar catàleg de Steam** i prem **Run workflow**. Al cap d’uns minuts apareix `steam-games.json` al repositori.
+4. Comprova que has pujat la carpeta `.github` (és oculta i la web de GitHub o el Finder poden no mostrar-la; és més fàcil pujar-ho amb `git` o GitHub Desktop).
+
+Mentre no existeixi `steam-games.json`, el cercador només troba els jocs de `games.js` i es pot afegir qualsevol joc amb l’enllaç de Steam. L’arxiu pesa uns quants MB i el navegador només el descarrega quan algú comença a cercar. Per canviar la freqüència, edita la línia `cron` del fitxer de `.github/workflows`.
+
+### 6. Afegir jocs preferits
 
 Edita `games.js`. L’`appid` és el número de l’enllaç de Steam (`store.steampowered.com/app/550/` és l’`appid` 550).
 

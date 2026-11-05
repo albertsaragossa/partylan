@@ -7,12 +7,16 @@ window.CONFIG = {
   // Adreça de la teva Firebase Realtime Database (sense barra final).
   // Exemple: "https://el-teu-projecte-default-rtdb.europe-west1.firebasedatabase.app"
   // Mentre estigui buida, l’app funciona en mode prova (dades només en aquest navegador).
-  databaseUrl: "https://partylan-918a5-default-rtdb.europe-west1.firebasedatabase.app/",
+  databaseUrl: "",
+
+  // Catàleg de tots els jocs de Steam (el genera sol GitHub, mira el README).
+  // Deixa-ho buit ("") per fer servir només els jocs de games.js.
+  cataleg: "steam-games.json",
 
   // Data límit per fer propostes (hora local, format AAAA-MM-DDTHH:MM).
   // Fins aquest moment només es poden proposar jocs; després s’obren les votacions.
   // Deixa-ho buit ("") perquè propostes i votacions estiguin sempre obertes.
-  dataLimit: "2026-11-08T23:59",
+  dataLimit: "2026-11-20T23:59",
 
   // Vots que pot repartir cada persona
   votsPerPersona: 5,

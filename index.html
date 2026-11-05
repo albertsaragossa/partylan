@@ -171,17 +171,45 @@ try{ const s = localStorage.getItem('pl-user'); if(s) enter(s); }catch{}
 
 /* ---------- Cercador de jocs ---------- */
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-$('q').addEventListener('input', () => {
+let catalog = null, catalogState = 'idle', lastHits = [];
+async function loadCatalog(){
+  if(catalogState !== 'idle' || !C.cataleg) return;
+  catalogState = 'loading';
+  try{
+    const r = await fetch(C.cataleg); if(!r.ok) throw 0;
+    catalog = (await r.json()).map(([id, name]) => ({appid:id, name, n:norm(name)}));
+    catalogState = 'ok';
+  }catch{ catalogState = 'error'; }
+  if($('q').value.trim()) search();
+}
+function search(){
   const q = norm($('q').value.trim()), box = $('sug');
   if(!q){ box.classList.add('hidden'); return; }
-  const hits = GAMES.filter(g => norm(g.name).includes(q)).slice(0,8);
-  box.innerHTML = hits.length ? hits.map(g => `<button type="button" data-id="${g.appid}">${esc(g.name)}</button>`).join('')
-    : '<div style="padding:10px 12px;color:var(--mut)">Cap resultat. Prova amb l’enllaç de Steam.</div>';
+  const seen = new Set(), hits = [];
+  const add = g => { const k = String(g.appid); if(hits.length < 8 && !seen.has(k)){ seen.add(k); hits.push(g); } };
+  GAMES.filter(g => norm(g.name + ' ' + (g.alias || '')).includes(q)).forEach(add);
+  if(catalog){
+    const starts = [], inside = [];
+    for(const g of catalog){
+      const i = g.n.indexOf(q);
+      if(i === 0){ if(starts.length < 30) starts.push(g); }
+      else if(i > 0 && inside.length < 30) inside.push(g);
+    }
+    starts.sort((a, b) => a.name.length - b.name.length).forEach(add);
+    inside.forEach(add);
+  }
+  lastHits = hits;
+  const buit = catalogState === 'loading' ? 'Carregant el catàleg de Steam…'
+    : catalogState === 'error' ? 'Cap resultat entre els preferits. Prova amb l’enllaç de Steam.'
+    : 'Cap resultat. Prova amb l’enllaç de Steam.';
+  box.innerHTML = hits.length ? hits.map(g => `<button type="button" data-id="${aid(g.appid)}">${esc(g.name)}</button>`).join('')
+    : `<div style="padding:10px 12px;color:var(--mut)">${buit}</div>`;
   box.classList.remove('hidden');
-});
+}
+$('q').addEventListener('input', () => { loadCatalog(); search(); });
 $('sug').addEventListener('click', e => {
   const b = e.target.closest('button'); if(!b) return;
-  const g = GAMES.find(x => String(x.appid) === b.dataset.id); if(g) pick(g);
+  const g = lastHits.find(x => aid(x.appid) === b.dataset.id); if(g) pick(g);
 });
 function pick(g){
   picked = {appid:g.appid, name:g.name};
